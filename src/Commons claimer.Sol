@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CommonsClaimer {
+    mapping(address => uint256) private claimableBalances;
+
+    event TokensClaimed(address indexed user, uint256 amount);
+    event TokensDeposited(address indexed admin, uint256 amount);
+
+    address public owner;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not the contract owner");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Deposit tokens to the contract
+    function depositTokens(uint256 amount) external onlyOwner {
+        claimableBalances[msg.sender] += amount;
+        emit TokensDeposited(msg.sender, amount);
+    }
+
+    // Get claimable balance
+    function getClaimableBalance(address user) public view returns (uint256) {
+        return claimableBalances[user];
+    }
+
+    // Claim tokens
+    function claimTokens() external {
+        uint256 balance = claimableBalances[msg.sender];
+        require(balance > 0, "No tokens to claim");
+
+        claimableBalances[msg.sender] = 0;
+        payable(msg.sender).transfer(balance);
+
+        emit TokensClaimed(msg.sender, balance);
+    }
+
+    // Fallback function to accept ether
+    receive() external payable {}
+}
